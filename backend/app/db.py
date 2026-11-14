@@ -22,6 +22,8 @@ SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
 
 async def init_db() -> None:
     """Create all tables that are registered on Base.metadata."""
+    from app import models  # noqa: F401  (registers the tables on Base.metadata)
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
