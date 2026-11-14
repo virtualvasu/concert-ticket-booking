@@ -1,0 +1,4 @@
+# Union of all Python deps plus test tools, for the local .venv
+-r backend/requirements.txt
+pytest==8.3.4
+pytest-asyncio==0.26.0

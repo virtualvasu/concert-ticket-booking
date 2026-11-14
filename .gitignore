@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Local config
+.env
+
+# Load-test runs and generated analysis output
+runs/
+analysis/out/
+
+# Course material (kept locally)
+requirement-docs/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
