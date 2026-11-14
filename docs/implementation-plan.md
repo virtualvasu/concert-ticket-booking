@@ -160,7 +160,7 @@ README.md
   - `fail_hold(session, hold_id, now, reason: str) -> bool` — active hold → `failed`, seat → AVAILABLE, user → `left` with `reason`; event `hold_failed`.
   - `expire_holds(session, sale_id, now) -> list[int]` — all active holds with `expires_at <= now` → `expired`, seats → AVAILABLE, users → `left`/`hold_expired`; event `hold_expired` per hold. Returns hold ids.
 
-- [ ] **Step 1: Write failing tests** (sale from `create_sale`, `now` a fixed UTC datetime):
+- [x] **Step 1: Write failing tests** (sale from `create_sale`, `now` a fixed UTC datetime):
   - `test_release_takes_lowest_rank_first`: `release_seats(n=10)` returns ranks 1..10; counts AVAILABLE 10, LOCKED 490.
   - `test_release_more_than_locked_releases_remaining`: after releasing 495, `release_seats(n=10)` returns 5 ids.
   - `test_hold_best_available_takes_rank_order`: after releasing 3, two holds get rank 1 then rank 2; third user gets rank 3; fourth gets None.
@@ -170,10 +170,10 @@ README.md
   - `test_expire_holds`: two holds, one expired at `now + 61s`; `expire_holds` returns one id; that seat AVAILABLE; other still HELD.
   - `test_concurrent_holds_never_share_a_seat`: release 10; 200 concurrent `hold_best_available` calls (each in its own session via `asyncio.gather`) → exactly 10 non-None holds with 10 distinct seat ids.
   - `test_concurrent_confirms_book_once`: 20 concurrent `confirm_hold` on the same hold (own sessions) → exactly 1 Booking.
-- [ ] **Step 2:** Run `pytest backend/tests/test_seats.py -v`. Expected: FAIL.
-- [ ] **Step 3:** Implement `seats.py`.
-- [ ] **Step 4:** Run tests. Expected: PASS.
-- [ ] **Step 5: Commit** `feat: seat state machine with atomic holds and confirmation`.
+- [x] **Step 2:** Run `pytest backend/tests/test_seats.py -v`. Expected: FAIL.
+- [x] **Step 3:** Implement `seats.py`.
+- [x] **Step 4:** Run tests. Expected: PASS.
+- [x] **Step 5: Commit** `feat: seat state machine with atomic holds and confirmation`.
 
 ### Task 4: Queue store and joining
 
