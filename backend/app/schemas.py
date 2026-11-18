@@ -27,3 +27,9 @@ class SaleConfig(BaseModel):
     hold_seconds: float = Field(default=60, gt=0)
     max_payment_attempts: int = Field(default=3, ge=1)
     tickets_per_user: int = Field(default=1, ge=1)
+
+
+class PayResult(BaseModel):
+    status: Literal["confirmed", "failed_retry", "failed_final", "expired_refunded", "expired"]
+    booking_id: int | None = None
+    attempts_left: int = 0
