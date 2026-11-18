@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, Request
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.admin import router as admin_router
 from app.api.buyer import router as buyer_router
 from app.db import get_session, init_db
 from app.redis_client import get_redis
@@ -19,6 +20,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="Concert booking", lifespan=lifespan)
 app.include_router(buyer_router)
+app.include_router(admin_router)
 
 
 @app.middleware("http")

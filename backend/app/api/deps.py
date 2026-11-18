@@ -1,16 +1,18 @@
 """Shared FastAPI dependencies for the API routers."""
 
+import hmac
 from datetime import datetime, timezone
 
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.db import get_session
 from app.models import User
 from app.payments.gateway import get_gateway
 from app.redis_client import get_redis
 
-__all__ = ["get_session", "get_redis", "get_gateway", "get_current_user", "utcnow"]
+__all__ = ["get_session", "get_redis", "get_gateway", "get_current_user", "require_admin", "utcnow"]
 
 
 def utcnow() -> datetime:
@@ -28,3 +30,9 @@ async def get_current_user(
     if user is None:
         raise HTTPException(401, "unknown user")
     return user
+
+
+async def require_admin(x_admin_token: str | None = Header(default=None)) -> None:
+    """Guard for /api/admin/*: the token must match ``ADMIN_TOKEN``."""
+    if not x_admin_token or not hmac.compare_digest(x_admin_token, get_settings().admin_token):
+        raise HTTPException(401, "invalid admin token")
