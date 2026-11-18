@@ -18,21 +18,22 @@ def waiting_times(trace: pd.DataFrame) -> pd.DataFrame:
     offered = users[users["type"] == "offer_made"].groupby("user_id")["t"].min()
     booked = users[users["type"] == "booking_confirmed"].groupby("user_id")["t"].min()
 
+    ends = (
+        users[users["type"].isin(["user_rejected", "hold_failed", "hold_expired"])]
+        .sort_values("t", kind="stable")
+        .groupby("user_id")
+        .last()
+    )
     rows = []
     for uid, joined_t in joined.items():
-        own = users[users["user_id"] == uid]
         if uid in booked.index:
             outcome, outcome_t = "booked", booked[uid]
         else:
             outcome, outcome_t = "never_served", np.nan
-            ends = own[own["type"].isin(["user_rejected", "hold_failed", "hold_expired"])]
-            if len(ends):
-                last = ends.sort_values("t").iloc[-1]
+            if uid in ends.index:
+                last = ends.loc[uid]
                 outcome_t = last["t"]
-                if last["type"] == "hold_expired":
-                    outcome = "hold_expired"
-                else:
-                    outcome = last["data"].get("reason", "never_served")
+                outcome = "hold_expired" if last["type"] == "hold_expired" else last["data"].get("reason", "never_served")
         offered_t = offered.get(uid, np.nan)
         booked_t = booked.get(uid, np.nan)
         rows.append(

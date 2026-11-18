@@ -1,0 +1,11 @@
+name: exp3_rate5
+seed: 1
+users: 1000
+arrival: {kind: spike, spread_s: 10}
+behavior:
+  poll_seconds: 2
+  pay_delay_s: [3, 15]
+  abandon_prob: 0.05
+sale: {mode: bucket, label: exp3_rate5, seats_per_tick: 10, tick_seconds: 2, hold_seconds: 30}
+gateway: {failure_rate: 0.1, latency_ms_mean: 300, latency_ms_jitter: 200}
+max_duration_s: 900

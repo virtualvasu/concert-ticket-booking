@@ -76,7 +76,7 @@ async def _pay_offer(client, log, idx, headers, hold_id, b, rng) -> None:
             "POST",
             "/api/pay",
             headers=headers,
-            json={"hold_id": hold_id, "idempotency_key": str(uuid.UUID(int=rng.getrandbits(128)))},
+            json={"hold_id": hold_id, "idempotency_key": str(uuid.uuid4())},
         )
         if res is None or res.status_code != 200:
             return

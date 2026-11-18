@@ -24,6 +24,19 @@ async def _user_task(i, at, start, sem, client, scenario, log):
         await simulate_user(client, i, scenario, random.Random(f"{scenario.seed}-{i}"), log)
 
 
+async def _get_json(client: httpx.AsyncClient, path: str, tries: int = 5, **kw):
+    """GET that survives transient errors (a saturated proxy answers 502/504 with HTML)."""
+    for attempt in range(tries):
+        try:
+            res = await client.get(path, **kw)
+            if res.status_code == 200:
+                return res.json()
+        except (httpx.HTTPError, ValueError):
+            pass
+        await asyncio.sleep(min(2 ** attempt, 10))
+    return None
+
+
 async def run(scenario: Scenario, scenario_path: Path, out: Path) -> int:
     run_dir = out / f"{scenario.name}-{datetime.now():%Y%m%d-%H%M%S}"
     run_dir.mkdir(parents=True)
@@ -57,7 +70,10 @@ async def run(scenario: Scenario, scenario_path: Path, out: Path) -> int:
         sale: dict = {}
         while True:
             await asyncio.sleep(1)
-            sale = (await client.get("/api/sale")).json()
+            polled = await _get_json(client, "/api/sale", tries=1)
+            if polled is None:
+                continue
+            sale = polled
             if sale["status"] == "ended":
                 break
             elapsed = time.monotonic() - start
@@ -65,7 +81,7 @@ async def run(scenario: Scenario, scenario_path: Path, out: Path) -> int:
             if elapsed > scenario.max_duration_s or all_done:
                 await client.post(f"/api/admin/sales/{sale_id}/stop", headers=admin)
                 stopped_early = True
-                sale = (await client.get("/api/sale")).json()
+                sale = await _get_json(client, "/api/sale") or sale
                 break
         duration = time.monotonic() - start
 
@@ -74,9 +90,17 @@ async def run(scenario: Scenario, scenario_path: Path, out: Path) -> int:
         await asyncio.gather(*tasks, return_exceptions=True)
         log.close()
 
-        trace = await client.get(f"/api/admin/sales/{sale_id}/trace", headers=admin, timeout=300)
+        for attempt in range(5):
+            trace = await client.get(f"/api/admin/sales/{sale_id}/trace", headers=admin, timeout=300)
+            if trace.status_code == 200:
+                break
+            await asyncio.sleep(2 ** attempt)
+        else:
+            raise RuntimeError("could not download the trace")
         (run_dir / "trace.jsonl").write_bytes(trace.content)
-        consistency = (await client.get(f"/api/admin/sales/{sale_id}/consistency", headers=admin)).json()
+        consistency = await _get_json(client, f"/api/admin/sales/{sale_id}/consistency", headers=admin)
+        if consistency is None:
+            raise RuntimeError("could not fetch the consistency check")
         (run_dir / "consistency.json").write_text(json.dumps(consistency, indent=2))
 
     summary = {
