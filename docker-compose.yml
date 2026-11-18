@@ -62,5 +62,12 @@ services:
       api:
         condition: service_started
 
+  web:
+    build: ./web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
 volumes:
   pgdata:
