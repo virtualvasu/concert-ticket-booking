@@ -154,8 +154,27 @@ export const adminStartSale = (token: string, saleId: number) =>
 export const adminStopSale = (token: string, saleId: number) =>
   request<Sale>('POST', `/api/admin/sales/${saleId}/stop`, { headers: admin(token) })
 
+export interface SeriesPoint {
+  t: number
+  rps: number
+  joins: number
+  offers: number
+  bookings: number
+  payment_attempts: number
+  expired: number
+}
+
+export interface Stats {
+  sale: Sale
+  counts: Record<string, number>
+  holds: Record<string, number>
+  payments: Record<string, number>
+  wait_seconds: { p50: number | null; p95: number | null; max: number | null }
+  series: SeriesPoint[]
+}
+
 export const adminStats = (token: string, window = 120) =>
-  request<Record<string, unknown>>('GET', `/api/admin/stats?window=${window}`, {
+  request<Stats>('GET', `/api/admin/stats?window=${window}`, {
     headers: admin(token),
   })
 
@@ -168,4 +187,14 @@ export const adminGetGateway = (token: string) =>
 export const adminSetGateway = (token: string, cfg: GatewayConfig) =>
   request<GatewayConfig>('PUT', '/api/admin/gateway', { body: cfg, headers: admin(token) })
 
-export const traceUrl = (saleId: number) => `/api/admin/sales/${saleId}/trace`
+/** Fetches the NDJSON trace with the admin header and saves it as a file. */
+export async function downloadTrace(token: string, saleId: number): Promise<void> {
+  const res = await fetch(`/api/admin/sales/${saleId}/trace`, { headers: admin(token) })
+  if (!res.ok) throw new ApiError(res.status, res.statusText)
+  const url = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `trace-${saleId}.jsonl`
+  a.click()
+  URL.revokeObjectURL(url)
+}
